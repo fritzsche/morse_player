@@ -14,10 +14,11 @@ const code_map = [
     [/./i, '']  // ignore all unknown char
 ]
 
-conv_to_morse("ab ca");
+conv_to_morse("ab ca *ab");
 
 function conv_to_morse(str) {
     let offset = 0;
+    let last_is_char = false;
     var result = [];
     for (; ;) {
         let length = 0;
@@ -33,15 +34,19 @@ function conv_to_morse(str) {
             }
         }
         if (pattern != '') {
-            if (pattern == ' ') result.push({ pattern: pattern })
-              else result.push({ pattern: pattern, offset: offset, length: length });
-            console.log( pattern );
+            if (pattern == ' ') {
+                 result.push({ pattern: pattern })
+                 last_is_char = false;
+            }
+            else {
+                if (last_is_char) result.push({ pattern: '*' });
+                result.push({ pattern: pattern, offset: offset, length: length });
+                last_is_char = true;
+            }    
+
         }
-        
-            offset += length;
+        offset += length;
         if (offset === str.length) break;
-      //  debugger;
-//        break;
     }
     console.log(result);
     console.log("end");
