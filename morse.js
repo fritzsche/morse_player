@@ -14,7 +14,7 @@ const code_map = [
     [/./i, '']  // ignore all unknown char
 ]
 
-conv_to_morse("ab ca *ab");
+conv_to_morse("   ab   ca *ab");
 
 function conv_to_morse(str) {
     let offset = 0;
