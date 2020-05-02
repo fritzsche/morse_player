@@ -27,9 +27,8 @@ function conv_to_morse(str) {
             let reg = code_map[i][0];
             found = str.substr(offset).match(reg);
             if (found && found.index == 0) {
-
                 pattern = code_map[i][1];
-                length = found.length;
+                length = found[0].length;
                 break;
             }
         }
