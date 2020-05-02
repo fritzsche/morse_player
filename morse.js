@@ -1,18 +1,12 @@
-const button = document.querySelector('button');
 let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-button.onclick = function () {
-    play(audioCtx);
-}
-
-let test_text = "vvv<ka> CQ CQ CQ DE DJ1TF PSE K = <sk>"
 
 const code_map = [
     [/<ka>/, '-.-.-'],
     [/<sk>/, '...-.-'],
+    [/=/, '-..._-'],
     [/a/, '.-'],
     [/b/, '-...'],
-    [/c/,'-.-.'],
+    [/c/, '-.-.'],
     [/d/, '-..'],
     [/e/, '.'],
     [/f/, '..-.'],
@@ -20,21 +14,21 @@ const code_map = [
     [/h/, '....'],
     [/i/, '..'],
     [/j/, '.---'],
-    [/k/, '-.-'], 
-    [/l/, '.-..'], 
-    [/m/, '--'], 
-    [/n/, '-.'], 
-    [/o/, '---'], 
-    [/p/, '.--.'], 
-    [/q/, '--.-'], 
-    [/r/, '.-.'], 
-    [/s/, '...'], 
-    [/t/, '-'], 
-    [/u/, '..-'], 
-    [/v/, '...-'], 
-    [/w/, '.--'], 
-    [/x/, '-..-'], 
-    [/y/, '-.--'], 
+    [/k/, '-.-'],
+    [/l/, '.-..'],
+    [/m/, '--'],
+    [/n/, '-.'],
+    [/o/, '---'],
+    [/p/, '.--.'],
+    [/q/, '--.-'],
+    [/r/, '.-.'],
+    [/s/, '...'],
+    [/t/, '-'],
+    [/u/, '..-'],
+    [/v/, '...-'],
+    [/w/, '.--'],
+    [/x/, '-..-'],
+    [/y/, '-.--'],
     [/z/, '--..'],
     [/1/, '.----'],
     [/2/, '..---'],
@@ -49,78 +43,112 @@ const code_map = [
     [/'/, '.-.-.-'],
     [/,/, '--..--'],
     [/\?/, '..--..'],
-    [/'/, '.----.'], 
+    [/'/, '.----.'],
     [/\//, '-..-.'],
     [/\s+/, ' '],  // whitespace is trimmed to single char
     [/./, '']  // ignore all unknown char
 ];
 
-conv_to_morse("vvv<ka> CQ CQ CQ DE DJ1TF PSE K = <sk>");
-
-function conv_to_morse(str) {
-    let low_str = str.toLowerCase();
-    let offset = 0;
-    let last_is_char = false;
-    var result = [];
-    for (; ;) {
-        let length = 0;
-        let pattern = "";
-        for (let i = 0; i < code_map.length; i++) {
-            let reg = code_map[i][0];
-            found = low_str.substr(offset).match(reg);
-            if (found && found.index == 0) {
-                pattern = code_map[i][1];
-                length = found[0].length;
-                break;
-            }
-        }
-        if (pattern != '') {
-            if (pattern == ' ') {
-                 result.push({ pattern: pattern })
-                 last_is_char = false;
-            }
-            else {
-                if (last_is_char) result.push({ pattern: '*' });
-                result.push({ pattern: pattern, offset: offset, length: length });
-                last_is_char = true;
-            }    
-
-        }
-        offset += length;
-        if (offset === low_str.length) break;
+class Morse {
+    constructor(ctx, cpm = 60, freq = 750) {
+        this._ctx = ctx;
+        this._cpm = cpm;
+        this._freq = freq;
+        this._ditLen = this._ditLength(cpm);
+        this._ditBuffer = this._createBuffer(this._ditLen);
+        this._dahBuffer = this._createBuffer(this._ditLen*3);
+        console.log(this._ditLen);
+        this.playBuffer(this._dahBuffer)
     }
-    console.log(result);
-    console.log("end");
+    morse(txt) {
+        let conv = this._conv_to_morse(txt);
+        console.log(conv);
+    }
+
+    _createBuffer(len) {
+        let rt = 50;
+        let ft = 50;
+        let myArrayBuffer = this._ctx.createBuffer(2, this._ctx.sampleRate * len, this._ctx.sampleRate);
+
+        for (let channel = 0; channel < myArrayBuffer.numberOfChannels; channel++) {
+            // This gives us the actual ArrayBuffer that contains the data
+            let nowBuffering = myArrayBuffer.getChannelData(channel);
+            for (let i = 0; i < myArrayBuffer.length; i++) {
+                nowBuffering[i] = Math.sin(2 * Math.PI * this._freq * i / this._ctx.sampleRate);
+                if (i < rt) {
+                    nowBuffering[i] *= Math.pow(Math.sin(Math.PI * i / (2 * rt)), 2);
+                }
+                if (i > myArrayBuffer.length - ft) {
+                    nowBuffering[i] *= Math.pow((Math.sin(2 * Math.PI * (i - (myArrayBuffer.length - ft) + ft) / (4 * ft))), 2);
+                }
+            }
+        }
+        return myArrayBuffer;
+    }
+    playBuffer(buf, start = 0) {
+        let source = this._ctx.createBufferSource();
+        source.buffer = buf;
+        source.connect(this._ctx.destination);
+        source.start(start);
+    }
+    _conv_to_morse(str) {
+        let low_str = str.toLowerCase();
+        let offset = 0;
+        let last_is_char = false;
+        var result = [];
+        for (; ;) {
+            let length = 0;
+            let pattern = "";
+            for (let i = 0; i < code_map.length; i++) {
+                let reg = code_map[i][0];
+                let found = low_str.substr(offset).match(reg);
+                if (found && found.index == 0) {
+                    pattern = code_map[i][1];
+                    length = found[0].length;
+                    break;
+                }
+            }
+            if (pattern != '') {
+                if (pattern == ' ') {
+                    result.push({ pattern: pattern })
+                    last_is_char = false;
+                }
+                else {
+                    if (last_is_char) result.push({ pattern: '*' });
+                    result.push({ pattern: pattern, offset: offset, length: length });
+                    last_is_char = true;
+                }
+
+            }
+            offset += length;
+            if (offset === low_str.length) break;
+        }
+        console.log(result);
+        console.log("end");
+    }
+
+    _ditLength(cpm) {
+        // The standard word "PARIS" has 50 units of time. 
+        // .--.  .-  .-.  ..  ... ==> "PARIS"
+        // 10 dit + 4 dah + 9 dit space + 4 dah space = 19 dit + 24 dit = 43 dit.
+        // 43 dit + 7 dit between words results in 50 dits total time
+        //
+        // 100cpm (character per minute) 
+        // means we need to give 20 times to word "PARIS".
+        // means we give 20 times 50 units of time = 1000 units of time per minute (or 60 seconds).
+        // 60 seconds devided by 1000 unit of time, means each unit (dit) takes 60ms.
+        // Means at  speed of 100 cpm  a dit has 60ms length
+        // length of one dit in s = ( 60ms * 100 ) / 1000        
+        const cpmDitSpeed = (60 * 100) / 1000;
+        return cpmDitSpeed / cpm;
+    }
 }
 
-function play(ctx) {
-    let freq = 700;
-    let rt = 50;
-    let ft = 50;
-    let myArrayBuffer = ctx.createBuffer(2, ctx.sampleRate * 1, ctx.sampleRate);
 
+let m = new Morse(audioCtx);
+m.morse("vvv<ka> CQ CQ CQ DE DJ1TF PSE K = <sk>")
 
-    for (let channel = 0; channel < myArrayBuffer.numberOfChannels; channel++) {
-        // This gives us the actual ArrayBuffer that contains the data
-        let nowBuffering = myArrayBuffer.getChannelData(channel);
-        for (let i = 0; i < myArrayBuffer.length; i++) {
-            nowBuffering[i] = Math.sin(2 * Math.PI * freq * i / ctx.sampleRate);
-            if (i < rt) {
-                nowBuffering[i] *= Math.pow(Math.sin(Math.PI * i / (2 * rt)), 2);
-            }
-            if (i > myArrayBuffer.length - ft) {
-                nowBuffering[i] *= Math.pow((Math.sin(2 * Math.PI * (i - (myArrayBuffer.length - ft) + ft) / (4 * ft))), 2);
-            }
-        }
-    }
-    // Get an AudioBufferSourceNode.
-    // This is the AudioNode to use when we want to play an AudioBuffer
-    let source = ctx.createBufferSource();
-    // set the buffer in the AudioBufferSourceNode
-    source.buffer = myArrayBuffer;
-    // connect the AudioBufferSourceNode to the
-    // destination so we can hear the sound
-    source.connect(ctx.destination);
-    // start the source playing
-    source.start();
+const button = document.querySelector('button');
+button.onclick = function () {
+    play(audioCtx);
 }
