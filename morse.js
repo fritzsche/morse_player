@@ -49,17 +49,18 @@ const code_map = [
 ];
 
 class Morse {
-    constructor(ctx, cpm = 60, freq = 600) {
+    constructor(ctx, cpm = 100, freq = 600) {
+        console.log("Begin Constr")
         this._ctx = ctx;
         this._cpm = cpm;
         this._freq = freq;
         this._ditLen = this._ditLength(cpm);
         this._ditBuffer = this._createBuffer(this._ditLen);
         this._dahBuffer = this._createBuffer(this._ditLen * 3);
-        console.log("Ditleng",this._ditLen);
+        console.log("End Contr");
     }
     morse(txt) {
-        debugger;
+        console.log("BEgin morse")
         let conv = this._conv_to_morse(txt);
         let current = this._ctx.currentTime;
         conv.forEach(letter => {
@@ -91,7 +92,7 @@ class Morse {
                     break;
             }
         });
-        console.log(conv);
+        console.log("end morse")
     }
 
     _createBuffer(len) {
@@ -174,10 +175,19 @@ class Morse {
 
 
 const button = document.querySelector('button');
+
+let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+audioCtx.resume().then(function() {
+    let m = new Morse(audioCtx);
+    m.morse("vvv<ka>")    
+  });  
+
+
+
 button.onclick = function () {
     let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-    let m = new Morse(audioCtx);
-    m.morse("vvv<ka> CQ CQ CQ DE DJ1TF PSE K = <sk>")    
-//    m.morse("v")        
+    audioCtx.resume().then(function() {
+        let m = new Morse(audioCtx);
+        m.morse("vvv<ka> CQ CQ CQ DE DJ1TF PSE K = <sk>")    
+      });     
 }

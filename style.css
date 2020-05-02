@@ -31,16 +31,13 @@
   #chars button[data-active="true"] {
     background-color: rgb(28, 161, 202);
   }
-  
-  #gof-stop{
-    background-color: rgb(245, 8, 8);
-  }
+
   
   .nodisplay{
     display: none;
   }
   
-  .button button{
+  button{
     background-color: gray;
     border: none;
   
@@ -68,8 +65,6 @@
     font-size: 1.1em;
     border-radius: 7px;
   }
-  
-  
   
   label{
     float: left;
