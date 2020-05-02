@@ -8,15 +8,57 @@ button.onclick = function () {
 let test_text = "vvv<ka> CQ CQ CQ DE DJ1TF PSE K = <sk>"
 
 const code_map = [
-    [/a/i, '.-'],
-    [/b/i, '-...'],
-    [/\s+/i, ' '],  // whitespace is trimmed to single char
-    [/./i, '']  // ignore all unknown char
-]
+    [/<ka>/, '-.-.-'],
+    [/<sk>/, '...-.-'],
+    [/a/, '.-'],
+    [/b/, '-...'],
+    [/c/,'-.-.'],
+    [/d/, '-..'],
+    [/e/, '.'],
+    [/f/, '..-.'],
+    [/g/, '--.'],
+    [/h/, '....'],
+    [/i/, '..'],
+    [/j/, '.---'],
+    [/k/, '-.-'], 
+    [/l/, '.-..'], 
+    [/m/, '--'], 
+    [/n/, '-.'], 
+    [/o/, '---'], 
+    [/p/, '.--.'], 
+    [/q/, '--.-'], 
+    [/r/, '.-.'], 
+    [/s/, '...'], 
+    [/t/, '-'], 
+    [/u/, '..-'], 
+    [/v/, '...-'], 
+    [/w/, '.--'], 
+    [/x/, '-..-'], 
+    [/y/, '-.--'], 
+    [/z/, '--..'],
+    [/1/, '.----'],
+    [/2/, '..---'],
+    [/3/, '...--'],
+    [/4/, '....-'],
+    [/5/, '.....'],
+    [/6/, '-....'],
+    [/7/, '--...'],
+    [/8/, '---..'],
+    [/9/, '----.'],
+    [/0/, '-----'],
+    [/'/, '.-.-.-'],
+    [/,/, '--..--'],
+    [/\?/, '..--..'],
+    [/'/, '.----.'], 
+    [/\//, '-..-.'],
+    [/\s+/, ' '],  // whitespace is trimmed to single char
+    [/./, '']  // ignore all unknown char
+];
 
-conv_to_morse("   ab   ca *ab");
+conv_to_morse("vvv<ka> CQ CQ CQ DE DJ1TF PSE K = <sk>");
 
 function conv_to_morse(str) {
+    let low_str = str.toLowerCase();
     let offset = 0;
     let last_is_char = false;
     var result = [];
@@ -25,7 +67,7 @@ function conv_to_morse(str) {
         let pattern = "";
         for (let i = 0; i < code_map.length; i++) {
             let reg = code_map[i][0];
-            found = str.substr(offset).match(reg);
+            found = low_str.substr(offset).match(reg);
             if (found && found.index == 0) {
                 pattern = code_map[i][1];
                 length = found[0].length;
@@ -45,7 +87,7 @@ function conv_to_morse(str) {
 
         }
         offset += length;
-        if (offset === str.length) break;
+        if (offset === low_str.length) break;
     }
     console.log(result);
     console.log("end");
