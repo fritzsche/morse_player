@@ -1,4 +1,3 @@
-let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 const code_map = [
     [/<ka>/, '-.-.-'],
@@ -50,15 +49,17 @@ const code_map = [
 ];
 
 class Morse {
-    constructor(ctx, cpm = 60, freq = 750) {
+    constructor(ctx, cpm = 60, freq = 600) {
         this._ctx = ctx;
         this._cpm = cpm;
         this._freq = freq;
         this._ditLen = this._ditLength(cpm);
         this._ditBuffer = this._createBuffer(this._ditLen);
         this._dahBuffer = this._createBuffer(this._ditLen * 3);
+        console.log("Ditleng",this._ditLen);
     }
     morse(txt) {
+        debugger;
         let conv = this._conv_to_morse(txt);
         let current = this._ctx.currentTime;
         conv.forEach(letter => {
@@ -71,7 +72,6 @@ class Morse {
                     break;
                 default:
                     let word = letter.pattern.split("").join("*");
-                    console.log(word);
                     [...word].forEach(tone => {
                         switch (tone) {
                             case '.':
@@ -173,12 +173,11 @@ class Morse {
 }
 
 
-//let m = new Morse(audioCtx);
-//m.morse("CQ")
-
 const button = document.querySelector('button');
 button.onclick = function () {
+    let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
     let m = new Morse(audioCtx);
-//    m.morse("vvv<ka> CQ CQ CQ DE DJ1TF PSE K = <sk>")    
-    m.morse("vvv")        
+    m.morse("vvv<ka> CQ CQ CQ DE DJ1TF PSE K = <sk>")    
+//    m.morse("v")        
 }
