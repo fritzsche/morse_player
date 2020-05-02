@@ -3,7 +3,7 @@ let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 const code_map = [
     [/<ka>/, '-.-.-'],
     [/<sk>/, '...-.-'],
-    [/=/, '-..._-'],
+    [/=/, '-...-'],
     [/a/, '.-'],
     [/b/, '-...'],
     [/c/, '-.-.'],
@@ -56,12 +56,41 @@ class Morse {
         this._freq = freq;
         this._ditLen = this._ditLength(cpm);
         this._ditBuffer = this._createBuffer(this._ditLen);
-        this._dahBuffer = this._createBuffer(this._ditLen*3);
-        console.log(this._ditLen);
-        this.playBuffer(this._dahBuffer)
+        this._dahBuffer = this._createBuffer(this._ditLen * 3);
     }
     morse(txt) {
         let conv = this._conv_to_morse(txt);
+        let current = this._ctx.currentTime;
+        conv.forEach(letter => {
+            switch (letter.pattern) {
+                case ' ':
+                    current += this._ditLen * 7;
+                    break;
+                case '*':
+                    current += this._ditLen * 3;
+                    break;
+                default:
+                    let word = letter.pattern.split("").join("*");
+                    console.log(word);
+                    [...word].forEach(tone => {
+                        switch (tone) {
+                            case '.':
+                                this._playBuffer(this._ditBuffer,current);
+                                current += this._ditLen;
+                                break;
+                            case '-': 
+                                this._playBuffer(this._dahBuffer,current);
+                                current += this._ditLen*3;
+                            case '*':
+                                current += this._ditLen;
+                                break;
+                            default: 
+                                debugger;    
+                        } 
+                    });
+                    break;
+            }
+        });
         console.log(conv);
     }
 
@@ -85,7 +114,7 @@ class Morse {
         }
         return myArrayBuffer;
     }
-    playBuffer(buf, start = 0) {
+    _playBuffer(buf, start = 0) {
         let source = this._ctx.createBufferSource();
         source.buffer = buf;
         source.connect(this._ctx.destination);
@@ -123,8 +152,7 @@ class Morse {
             offset += length;
             if (offset === low_str.length) break;
         }
-        console.log(result);
-        console.log("end");
+        return(result);
     }
 
     _ditLength(cpm) {
@@ -145,10 +173,12 @@ class Morse {
 }
 
 
-let m = new Morse(audioCtx);
-m.morse("vvv<ka> CQ CQ CQ DE DJ1TF PSE K = <sk>")
+//let m = new Morse(audioCtx);
+//m.morse("CQ")
 
 const button = document.querySelector('button');
 button.onclick = function () {
-    play(audioCtx);
+    let m = new Morse(audioCtx);
+//    m.morse("vvv<ka> CQ CQ CQ DE DJ1TF PSE K = <sk>")    
+    m.morse("vvv")        
 }
