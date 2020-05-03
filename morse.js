@@ -49,12 +49,15 @@ const code_map = [
 ];
 
 class Morse {
-    constructor(ctx, cpm = 100, freq = 600) {
+    constructor(ctx, cpm = 100, freq = 650,farnsworth = 999) {
 
         this._ctx = ctx;
         this._cpm = cpm;
         this._freq = freq;
+        this._farnsworth = farnsworth < cpm ? farnsworth: cpm;
         this._ditLen = this._ditLength(cpm);
+        
+        this._spaceDitLen = this._ditLength(this._farnsworth);
         this._ditBuffer = this._createBuffer(this._ditLen);
         this._dahBuffer = this._createBuffer(this._ditLen * 3);
 
@@ -72,10 +75,10 @@ class Morse {
         conv.forEach(letter => {
             switch (letter.pattern) {
                 case ' ':
-                    current += this._ditLen * 7;
+                    current += this._spaceDitLen * 7;
                     break;
                 case '*':
-                    current += this._ditLen * 3;
+                    current += this._spaceDitLen * 3;
                     break;
                 default:
                     let word = letter.pattern.split("").join("*");
@@ -182,8 +185,8 @@ let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 let start = Date.now();
 audioCtx.resume().then(() => {
     const millis = Date.now() - start;
-    if (millis < 10) {
-        let m = new Morse(audioCtx, 100, 650);
+    if (millis < 200) {
+        let m = new Morse(audioCtx, 100, 650,60);
         m.morse("vvv<ka>");
     }
 });
