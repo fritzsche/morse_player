@@ -50,17 +50,23 @@ const code_map = [
 
 class Morse {
     constructor(ctx, cpm = 100, freq = 600) {
-        console.log("Begin Constr")
+
         this._ctx = ctx;
         this._cpm = cpm;
         this._freq = freq;
         this._ditLen = this._ditLength(cpm);
         this._ditBuffer = this._createBuffer(this._ditLen);
         this._dahBuffer = this._createBuffer(this._ditLen * 3);
-        console.log("End Contr");
+
     }
+
     morse(txt) {
-        console.log("BEgin morse")
+        if (audioCtx.state !== 'running') {
+            audioCtx.resume().then(() => this._morse(txt));
+        } else this._morse(txt);
+    }
+
+    _morse(txt) {
         let conv = this._conv_to_morse(txt);
         let current = this._ctx.currentTime;
         conv.forEach(letter => {
@@ -76,23 +82,22 @@ class Morse {
                     [...word].forEach(tone => {
                         switch (tone) {
                             case '.':
-                                this._playBuffer(this._ditBuffer,current);
+                                this._playBuffer(this._ditBuffer, current);
                                 current += this._ditLen;
                                 break;
-                            case '-': 
-                                this._playBuffer(this._dahBuffer,current);
-                                current += this._ditLen*3;
+                            case '-':
+                                this._playBuffer(this._dahBuffer, current);
+                                current += this._ditLen * 3;
                             case '*':
                                 current += this._ditLen;
                                 break;
-                            default: 
-                                debugger;    
-                        } 
+                            default:
+                                debugger;
+                        }
                     });
                     break;
             }
         });
-        console.log("end morse")
     }
 
     _createBuffer(len) {
@@ -153,7 +158,7 @@ class Morse {
             offset += length;
             if (offset === low_str.length) break;
         }
-        return(result);
+        return (result);
     }
 
     _ditLength(cpm) {
@@ -172,22 +177,20 @@ class Morse {
         return cpmDitSpeed / cpm;
     }
 }
+let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+let start = Date.now();
+audioCtx.resume().then(() => {
+    const millis = Date.now() - start;
+    if (millis < 10) {
+        let m = new Morse(audioCtx, 100, 650);
+        m.morse("vvv<ka>");
+    }
+});
 
 
 const button = document.querySelector('button');
-
-let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-audioCtx.resume().then(function() {
-    let m = new Morse(audioCtx);
-    m.morse("vvv<ka>")    
-  });  
-
-
-
 button.onclick = function () {
-    let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    audioCtx.resume().then(function() {
-        let m = new Morse(audioCtx);
-        m.morse("vvv<ka> CQ CQ CQ DE DJ1TF PSE K = <sk>")    
-      });     
+    let m = new Morse(audioCtx);
+    m.morse("vvv<ka> CQ CQ CQ DE DJ1TF PSE K = <sk>")
 }
