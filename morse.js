@@ -48,15 +48,16 @@ const code_map = [
     [/./, '']  // ignore all unknown char
 ];
 
+
 class Morse {
-    constructor(ctx, cpm = 100, freq = 650,farnsworth = 999) {
+    constructor(ctx, cpm = 100, freq = 650, farnsworth = 999) {
 
         this._ctx = ctx;
         this._cpm = cpm;
         this._freq = freq;
-        this._farnsworth = farnsworth < cpm ? farnsworth: cpm;
+        this._farnsworth = farnsworth < cpm ? farnsworth : cpm;
         this._ditLen = this._ditLength(cpm);
-        
+
         this._spaceDitLen = this._ditLength(this._farnsworth);
         this._ditBuffer = this._createBuffer(this._ditLen);
         this._dahBuffer = this._createBuffer(this._ditLen * 3);
@@ -68,28 +69,85 @@ class Morse {
             audioCtx.resume().then(() => this._morse(txt));
         } else this._morse(txt);
     }
+    // https://github.com/cwilso/metronome/
+    // https://www.html5rocks.com/en/tutorials/audio/scheduling/
 
     _morse(txt) {
         let conv = this._conv_to_morse(txt);
-        let current = this._ctx.currentTime;
+        let seq = this._seqenceEvents(conv);
+        console.log("seq", seq);
+        this._morsePlay(seq);
+    }
+
+    _morsePlay(seq) {
+        let start = this._ctx.currentTime;
+        let ahead = this._ditLen * 4;
+
+        console.log( seq )
+
+        let scheduled = () => {
+            let current = this._ctx.currentTime;
+            let delta = current - start;
+            for (;;) {
+                if (seq.length === 0) break;
+                let ev = seq.shift();
+                if (ev.time < delta + ahead) {
+                //    console.log(ev);
+                    switch (ev.action) {
+                        case 'PLAY': {
+                            switch (ev.tone) {
+                                case '.': {
+                                    this._playBuffer(this._ditBuffer, start+ev.time);
+                                    break;
+                                }
+                                case '_': {
+                                    this._playBuffer(this._dahBuffer, start+ev.time);
+                                    break;                                    
+                                }
+                            }
+                            break;
+                        }
+                        case 'DISPLAY': {
+                            let milis = ( ev.time - ( current-start ) ) * 1000;
+                  
+                            setTimeout(  () => { console.log(ev.time,ev.value) }, milis );
+                        }
+                    }
+                } else {
+                    seq.unshift(ev);
+                    break;
+                }
+            }
+            if (seq.length > 0) setTimeout(scheduled,  ( ahead * 1000) / 3 );
+        }
+        scheduled();
+    }
+
+    _seqenceEvents(conv) {
+        let seq = [];
+        let current = 0;
+
         conv.forEach(letter => {
             switch (letter.pattern) {
                 case ' ':
+                    seq.push({ time: current, action: 'DISPLAY', value: ' ' });
                     current += this._spaceDitLen * 7;
+                    
                     break;
                 case '*':
                     current += this._spaceDitLen * 3;
                     break;
                 default:
                     let word = letter.pattern.split("").join("*");
+                    seq.push({ time: current, action: 'DISPLAY', value: letter.text });
                     [...word].forEach(tone => {
                         switch (tone) {
                             case '.':
-                                this._playBuffer(this._ditBuffer, current);
+                                seq.push({ time: current, action: 'PLAY', tone: '.' });
                                 current += this._ditLen;
                                 break;
                             case '-':
-                                this._playBuffer(this._dahBuffer, current);
+                                seq.push({ time: current, action: 'PLAY', tone: '_' });
                                 current += this._ditLen * 3;
                             case '*':
                                 current += this._ditLen;
@@ -101,6 +159,7 @@ class Morse {
                     break;
             }
         });
+        return seq;
     }
 
     _createBuffer(len) {
@@ -153,7 +212,7 @@ class Morse {
                 }
                 else {
                     if (last_is_char) result.push({ pattern: '*' });
-                    result.push({ pattern: pattern, offset: offset, length: length });
+                    result.push({ pattern: pattern, offset: offset, length: length, text: low_str.substr(offset, length) });
                     last_is_char = true;
                 }
 
@@ -186,7 +245,7 @@ let start = Date.now();
 audioCtx.resume().then(() => {
     const millis = Date.now() - start;
     if (millis < 200) {
-        let m = new Morse(audioCtx, 100, 650,60);
+        let m = new Morse(audioCtx, 100, 650, 60);
         m.morse("vvv<ka>");
     }
 });
