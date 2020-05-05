@@ -2,8 +2,8 @@
 const code_map = [
     [/<ka>/, '-.-.-'],  // Message begins / Start of work 
     [/<sk>/, '...-.-'], //  End of contact / End of work
-    [/<ar>/, '.−.−.'],  // End of transmission / End of message
-    [/<kn>/, '−.−-.'], // Go ahead, specific named station.
+    [/<ar>/, '.-.-.'],  // End of transmission / End of message
+    [/<kn>/, '-.--.'], // Go ahead, specific named station.
     [/=/, '-...-'],
     [/a/, '.-'],
     [/b/, '-...'],
@@ -66,21 +66,21 @@ class Morse {
 
     }
 
-    morse(txt) {
+    morse(txt, callback) {
         if (audioCtx.state !== 'running') {
-            audioCtx.resume().then(() => this._morse(txt));
+            audioCtx.resume().then(() => this._morse(txt,callback));
         } else this._morse(txt);
     }
     // https://github.com/cwilso/metronome/
     // https://www.html5rocks.com/en/tutorials/audio/scheduling/
 
-    _morse(txt) {
+    _morse(txt,callback) {
         let conv = this._conv_to_morse(txt);
         let seq = this._seqenceEvents(conv);
-        this._morsePlay(seq);
+        this._morsePlay(seq,callback);
     }
 
-    _morsePlay(seq) {
+    _morsePlay(seq, callback) {
         let start = this._ctx.currentTime;
         let ahead = this._ditLen * 4;
 
@@ -109,7 +109,10 @@ class Morse {
                         case 'DISPLAY': {
                             let milis = ( ev.time - ( current-start ) ) * 1000;
                   
-                            setTimeout(  () => { console.log(ev.time,ev.value) }, milis );
+                            setTimeout(  () => { 
+                                if (callback) callback(ev.value);
+                            //    console.log(ev.time,ev.value);
+                            }, milis );
                         }
                     }
                 } else {
@@ -258,7 +261,13 @@ button.onclick = function () {
     let fw = document.getElementById("fw").value;
     let freq = document.getElementById("freq").value;
 
+    const all = document.getElementById("all");
+    all.innerHTML = '';
     let m = new Morse(audioCtx,wpm*5,freq, fw*5);
 
-    m.morse(morseTxt)
+    let currentOut = '';
+    m.morse(morseTxt, (txt) => {
+        currentOut += txt;
+        all.textContent = currentOut;
+    })
 }
