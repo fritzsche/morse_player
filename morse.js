@@ -1,7 +1,9 @@
 
 const code_map = [
-    [/<ka>/, '-.-.-'],
-    [/<sk>/, '...-.-'],
+    [/<ka>/, '-.-.-'],  // Message begins / Start of work 
+    [/<sk>/, '...-.-'], //  End of contact / End of work
+    [/<ar>/, '.−.−.'],  // End of transmission / End of message
+    [/<kn>/, '−.−-.'], // Go ahead, specific named station.
     [/=/, '-...-'],
     [/a/, '.-'],
     [/b/, '-...'],
@@ -75,15 +77,12 @@ class Morse {
     _morse(txt) {
         let conv = this._conv_to_morse(txt);
         let seq = this._seqenceEvents(conv);
-        console.log("seq", seq);
         this._morsePlay(seq);
     }
 
     _morsePlay(seq) {
         let start = this._ctx.currentTime;
         let ahead = this._ditLen * 4;
-
-        console.log( seq )
 
         let scheduled = () => {
             let current = this._ctx.currentTime;
@@ -241,6 +240,7 @@ class Morse {
 }
 let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
+/*
 let start = Date.now();
 audioCtx.resume().then(() => {
     const millis = Date.now() - start;
@@ -249,10 +249,16 @@ audioCtx.resume().then(() => {
         m.morse("vvv<ka>");
     }
 });
-
+*/
 
 const button = document.querySelector('button');
 button.onclick = function () {
-    let m = new Morse(audioCtx);
-    m.morse("vvv<ka> CQ CQ CQ DE DJ1TF PSE K = <sk>")
+    let morseTxt = document.getElementById("txt").value;
+    let wpm = document.getElementById("wpm").value;
+    let fw = document.getElementById("fw").value;
+    let freq = document.getElementById("freq").value;
+
+    let m = new Morse(audioCtx,wpm*5,freq, fw*5);
+
+    m.morse(morseTxt)
 }

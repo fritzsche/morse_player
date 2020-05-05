@@ -9,8 +9,33 @@
 </head>
 
 <body>
-    <button class="button">Morse</button>
-    <script src="morse.js"></script>
+  <h1>Simple Morse Player</h1>
+  <h2>General</h2>
+  <p>
+    <label for="wpm"> WPM </label> 
+    <input id="wpm" type="number" min="5" max="40" step="1" value="17">
+  </p>
+  <p>
+    <label for="fw">Farnsworth </label> 
+    <input id="fw" type="number" min="5" max="40" step="1" value="5">
+  </p>
+  <p>
+    <label for="freq"> Frequency </label> 
+    <input id="freq" type="number" min="500" max="900" step="10" value="650">
+  </p>
+  <div class="setclear">
+    <h2>Text</h2>
+    <p>
+      <label for="txt">Input</label>
+      <textarea id="txt">CQ CQ CQ</textarea>
+    </p>
+  </div>
+  <div class="setclear">
+    <p>
+      <button class="button">Morse</button>
+    </p>
+  </div>
+  <script src="morse.js"></script>
 </body>
 
 </html>

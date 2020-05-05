@@ -79,6 +79,8 @@
     width: 150px;
   }
   
-  
+  #txt {
+    height: 10em;
+  }
   
   .setclear { clear: both; margin-bottom: 1em;}
