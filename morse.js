@@ -69,7 +69,7 @@ class Morse {
     morse(txt, callback) {
         if (audioCtx.state !== 'running') {
             audioCtx.resume().then(() => this._morse(txt,callback));
-        } else this._morse(txt);
+        } else this._morse(txt,callback);
     }
     // https://github.com/cwilso/metronome/
     // https://www.html5rocks.com/en/tutorials/audio/scheduling/
