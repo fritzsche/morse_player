@@ -94,15 +94,17 @@ class Morse {
         this._runId++;
         let currRun = this._runId;
 
+        let currPos = 0;
 
         let scheduled = () => {
             if (currRun !== this._runId) return;
             let current = this._ctx.currentTime;
             let delta = current - start;
-            for (; ;) {
-                if (seq.length === 0) break;
-                let ev = seq.shift();
-                if (ev.time < delta + ahead) {
+            for (;;) {          
+                if (currPos >= seq.length) break; // exit look if current position reach end
+                let ev = seq[currPos]; // pick current event
+                if (ev.time < delta + ahead) {  // check the event is part of current lookahead
+                    currPos++;
                     switch (ev.action) {
                         case 'PLAY': {
                             switch (ev.tone) {
@@ -119,16 +121,12 @@ class Morse {
                         }
                         case 'DISPLAY': {
                             let milis = (ev.time - (current - start)) * 1000;
-
                             setTimeout(() => {
                                 if (callback) callback(ev.value);
                             }, milis);
                         }
                     }
-                } else {
-                    seq.unshift(ev);
-                    break;
-                }
+                } else break;       
             }
             if (seq.length > 0) setTimeout(scheduled, (ahead * 1000) / 3);
         }
