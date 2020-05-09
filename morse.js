@@ -94,17 +94,17 @@ class Morse {
         this._runId++;
         let currRun = this._runId;
 
-        let currPos = 0;
+        this._currPos = 0;
 
         let scheduled = () => {
             if (currRun !== this._runId) return;
             let current = this._ctx.currentTime;
             let delta = current - start;
             for (;;) {          
-                if (currPos >= seq.length) break; // exit look if current position reach end
-                let ev = seq[currPos]; // pick current event
+                if (this._currPos >= seq.length) break; // exit look if current position reach end
+                let ev = seq[this._currPos]; // pick current event
                 if (ev.time < delta + ahead) {  // check the event is part of current lookahead
-                    currPos++;
+                    this._currPos++;
                     switch (ev.action) {
                         case 'PLAY': {
                             switch (ev.tone) {
