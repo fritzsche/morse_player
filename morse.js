@@ -286,7 +286,8 @@ button.onclick = function () {
         m.morse(morseTxt, (txt) => {
 
             currentOut += txt;
-            out.value = currentOut;
+          //  out.value = currentOut;
+            out.textContent = currentOut;
             out.scrollTop = out.scrollHeight;
             //        all.textContent = currentOut;
         })
