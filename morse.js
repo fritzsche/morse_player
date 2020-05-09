@@ -268,11 +268,11 @@ let isRunning = false;
 let m;
 const button = document.querySelector('button');
 button.onclick = function () {
-/*    if (isRunning) {
+    if (isRunning) {
         m.stop();
         isRunning = false;
     } else {
-     */   
+        
         isRunning = true;
         let morseTxt = document.getElementById("txt").value;
         let wpm = document.getElementById("wpm").value;
@@ -291,5 +291,5 @@ button.onclick = function () {
             out.scrollTop = out.scrollHeight;
             //        all.textContent = currentOut;
         })
- //   }
+    }
 }
