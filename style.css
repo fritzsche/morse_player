@@ -90,6 +90,8 @@
   word-wrap: break-word;
   overflow: hidden;
   padding: 10px;
+  background-color: rgb(46, 46, 46);
+  color: white;
 /*  white-space: pre;*/
 }
 
