@@ -112,7 +112,7 @@ class Morse {
                         case 'DISPLAY': {
                             let milis = (ev.time - (current - start)) * 1000;
                             setTimeout(() => {
-                                if (callback) callback(ev.value);
+                                if (callback) callback(ev);
                             }, milis);
                         }
                     }
@@ -271,9 +271,9 @@ button.onclick = function () {
 
         let currentOut = '';
         const out = document.getElementById("out");
-        m.morse(morseTxt, (txt) => {
+        m.morse(morseTxt, (ev) => {
 
-            currentOut += txt;
+            currentOut += ev.value;
           //  out.value = currentOut;
             out.textContent = currentOut;
             out.scrollTop = out.scrollHeight;
