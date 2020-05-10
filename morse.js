@@ -53,45 +53,97 @@ const code_map = [
 
 class Morse {
     constructor(ctx, wpm = 20, freq = 650, farnsworth = 999) {
+
+
         this._ctx = ctx;  // web audio context
-        this._wpm = Number(wpm);
-        this._freq = freq;
-        this._farnsworth = Number(farnsworth);
-        if ( this._farnsworth > this._wpm )  this._farnsworth = this._wpm;
-        this._ditLen = this._ditLength(wpm * 5);
         this._runId = 0;
+        this._currPos = 0;
+        this._state = 'INITIAL';
+
+        this._wpm = Number(wpm);
+        this._ditLen = this._ditLength(wpm * 5);
+        this._farnsworth = Number(farnsworth);
+        if (this._farnsworth > this._wpm) this._farnsworth = this._wpm;
         this._spaceDitLen = this._ditLength(this._farnsworth * 5);
-        this._ditBuffer = this._createBuffer(this._ditLen);
-        this._dahBuffer = this._createBuffer(this._ditLen * 3);
-        
-        this._currPos = 0;        
+
+        this.frequency = freq;
+
     }
+
+    set wpm(w) {
+        if (this._wpm === w) return;
+        this._wpm = Number(wpm);
+
+        if (this._state !== 'INITIAL') {
+            this._seqence = this._seqenceEvents(this._conv_to_morse(this._text));
+            this.startTime = this._ctx.currentTime - this._seqence[this._currPos].time;
+        }
+    }
+
+    set farnsworth(f) {
+        if (this._farnsworth === f) return;
+        this._farnsworth = Number(f);
+        if (this._farnsworth > this._wpm) this._farnsworth = this._wpm;
+        this._spaceDitLen = this._ditLength(this._farnsworth * 5);
+        // need to recalc sequence
+        if (this._state !== 'INITIAL') {
+            this._seqence = this._seqenceEvents(this._conv_to_morse(this._text));
+            this.startTime = this._ctx.currentTime - this._seqence[this._currPos].time;
+        }
+    }
+
 
     /**
      * @param {string} txt
      */
     set text(txt) {
+        if (this._text === txt) return;
         this._text = txt;
-        this._currPos = 0;          
-        this._seqence = this._seqenceEvents(this._conv_to_morse(txt)); 
-    }    
+        this._currPos = 0;
+        this._seqence = this._seqenceEvents(this._conv_to_morse(txt));
+    }
 
     set displayCallback(callback) {
         this._displayCallback = callback;
     }
 
-    start() {        
+
+    set frequency(freq = 650) {
+        this._freq = freq;
+        this._ditBuffer = this._createBuffer(this._ditLen);
+        this._dahBuffer = this._createBuffer(this._ditLen * 3);
+    }
+
+
+    get state() {
+        return this._state;
+    }
+
+    start() {
         if (audioCtx.state !== 'running') {
             audioCtx.resume().then(() => this._morsePlay());
         } else this._morsePlay();
     }
     stop() {
         this._runId++;
+        this._state = 'STOPPED';
     }
     // https://github.com/cwilso/metronome/
     // https://www.html5rocks.com/en/tutorials/audio/scheduling/
-    _morsePlay() {      
-        this._startTime = this._ctx.currentTime; // start time of the current player sequence
+    _morsePlay() {
+        switch (this._state) {
+            case 'INITIAL': this._startTime = this._ctx.currentTime;
+                break;
+            case 'STOPPED':
+                this._startTime = this._ctx.currentTime - this._seqence[this._currPos].time;
+                break;
+            case 'ENDED':
+                this._currPos = 0;
+                this._startTime = this._ctx.currentTime;
+                break;
+        }
+        this._state = 'STARTED';
+        // start time of the current player sequence
         let ahead = this._ditLen * 4;  // number of time we look ahead for new events to play
         this._runId++;
         let currRun = this._runId;
@@ -99,8 +151,11 @@ class Morse {
             if (currRun !== this._runId) return;
             let current = this._ctx.currentTime;
             let delta = current - this._startTime;
-            for (;;) {          
-                if (this._currPos >= this._seqence.length) break; // exit look if current position reach end
+            for (; ;) {
+                if (this._currPos >= this._seqence.length) {
+                    this._state = 'ENDED';
+                    break; // exit look if current position reach end
+                }
                 let ev = this._seqence[this._currPos]; // pick current event
                 if (ev.time < delta + ahead) {  // check the event is part of current lookahead
                     this._currPos++;
@@ -125,7 +180,7 @@ class Morse {
                             }, milis);
                         }
                     }
-                } else break;       
+                } else break;
             }
             if (this._seqence.length > 0) setTimeout(scheduled, (ahead * 1000) / 3);
         }
@@ -135,36 +190,37 @@ class Morse {
     _seqenceEvents(conv) {
         let seq = [];
         let current = 0;
-
         let currDits = 0;
         let currSpaceDits = 0;
+        let currText = "";
 
         conv.forEach(letter => {
             switch (letter.pattern) {
                 case ' ':
-                    seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: ' ' });
+                    currText += ' ';
+                    seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: ' ', text: currText });
                     current += this._spaceDitLen * 7;
                     currSpaceDits += 7;
-
                     break;
                 case '*':
                     current += this._spaceDitLen * 3;
                     currSpaceDits += 3;
-                    break;  
+                    break;
                 default:
                     let word = letter.pattern.split("").join("*");
-                    seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: letter.text });
+                    currText += letter.text;
+                    seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: letter.text, text: currText });
                     [...word].forEach(tone => {
                         currDits++;
                         switch (tone) {
                             case '.':
                                 seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'PLAY', tone: '.' });
-                                current += this._ditLen;                                
+                                current += this._ditLen;
                                 break;
                             case '-':
                                 seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'PLAY', tone: '_' });
                                 current += this._ditLen * 3;
-                                currDits+=2;
+                                currDits += 2;
                             case '*':
                                 current += this._ditLen;
                                 break;
@@ -231,7 +287,6 @@ class Morse {
                     result.push({ pattern: pattern, offset: offset, length: length, text: low_str.substr(offset, length) });
                     last_is_char = true;
                 }
-
             }
             offset += length;
             if (offset === low_str.length) break;
@@ -268,33 +323,34 @@ audioCtx.resume().then(() => {
 });
 */
 
-let isRunning = false;
-let m;
-const button = document.querySelector('button');
 
-let morseTxt = document.getElementById("txt").value;
+
 let wpm = document.getElementById("wpm").value;
 let fw = document.getElementById("fw").value;
-let freq = document.getElementById("freq").value;
-m = new Morse(audioCtx, wpm , freq, fw);
+
+let m = new Morse(audioCtx, wpm, freq, fw);
+
+const out = document.getElementById("out");
+//m.text = morseTxt;
+m.displayCallback = (ev) => {
+    out.textContent = ev.text;
+    out.scrollTop = out.scrollHeight;
+}
+const button = document.querySelector('button');
 
 button.onclick = function () {
-    if (isRunning) {
-        m.stop();
-        isRunning = false;
-    } else {
-        
-        isRunning = true;
-
-
-        let currentOut = '';
-        const out = document.getElementById("out");
-        m.text = morseTxt;
-        m.displayCallback = (ev) => {
-            currentOut += ev.value;
-            out.textContent = currentOut;
-            out.scrollTop = out.scrollHeight;
-        }
-        m.start();
+    switch (m.state) {
+        case 'STARTED': m.stop(); break;
+        default:
+            let freq = document.getElementById("freq").value;
+            let morseTxt = document.getElementById("txt").value;
+            let wpm = document.getElementById("wpm").value;
+            let fw = document.getElementById("fw").value;
+            m.text = morseTxt;
+            m.frequency = freq;
+            m.wpm = wpm;
+            m.farnsworth = fw;
+            m.start();
+            break;
     }
 }
