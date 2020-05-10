@@ -63,33 +63,42 @@ class Morse {
         this._spaceDitLen = this._ditLength(this._farnsworth * 5);
         this._ditBuffer = this._createBuffer(this._ditLen);
         this._dahBuffer = this._createBuffer(this._ditLen * 3);
+        
+        this._currPos = 0;        
     }
 
-    morse(txt, callback) {
-        let conv = this._conv_to_morse(txt);
-        this._seqence = this._seqenceEvents(conv);         
+    /**
+     * @param {string} txt
+     */
+    set text(txt) {
+        this._text = txt;
+        this._currPos = 0;          
+        this._seqence = this._seqenceEvents(this._conv_to_morse(txt)); 
+    }    
+
+    set displayCallback(callback) {
+        this._displayCallback = callback;
+    }
+
+    start() {        
         if (audioCtx.state !== 'running') {
-            audioCtx.resume().then(() => this._morsePlay(callback));
-        } else this._morsePlay(callback);
+            audioCtx.resume().then(() => this._morsePlay());
+        } else this._morsePlay();
     }
     stop() {
         this._runId++;
     }
     // https://github.com/cwilso/metronome/
     // https://www.html5rocks.com/en/tutorials/audio/scheduling/
-    _morsePlay(callback) {      
-        let start = this._ctx.currentTime; // start time of the current player sequence
+    _morsePlay() {      
+        this._startTime = this._ctx.currentTime; // start time of the current player sequence
         let ahead = this._ditLen * 4;  // number of time we look ahead for new events to play
-
         this._runId++;
         let currRun = this._runId;
-
-        this._currPos = 0;
-
         let scheduled = () => {
             if (currRun !== this._runId) return;
             let current = this._ctx.currentTime;
-            let delta = current - start;
+            let delta = current - this._startTime;
             for (;;) {          
                 if (this._currPos >= this._seqence.length) break; // exit look if current position reach end
                 let ev = this._seqence[this._currPos]; // pick current event
@@ -99,20 +108,20 @@ class Morse {
                         case 'PLAY': {
                             switch (ev.tone) {
                                 case '.': {
-                                    this._playBuffer(this._ditBuffer, start + ev.time);
+                                    this._playBuffer(this._ditBuffer, this._startTime + ev.time);
                                     break;
                                 }
                                 case '_': {
-                                    this._playBuffer(this._dahBuffer, start + ev.time);
+                                    this._playBuffer(this._dahBuffer, this._startTime + ev.time);
                                     break;
                                 }
                             }
                             break;
                         }
                         case 'DISPLAY': {
-                            let milis = (ev.time - (current - start)) * 1000;
+                            let milis = (ev.time - (current - this._startTime)) * 1000;
                             setTimeout(() => {
-                                if (callback) callback(ev);
+                                if (this._displayCallback) this._displayCallback(ev);
                             }, milis);
                         }
                     }
@@ -141,7 +150,7 @@ class Morse {
                 case '*':
                     current += this._spaceDitLen * 3;
                     currSpaceDits += 3;
-                    break;
+                    break;  
                 default:
                     let word = letter.pattern.split("").join("*");
                     seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: letter.text });
@@ -262,6 +271,13 @@ audioCtx.resume().then(() => {
 let isRunning = false;
 let m;
 const button = document.querySelector('button');
+
+let morseTxt = document.getElementById("txt").value;
+let wpm = document.getElementById("wpm").value;
+let fw = document.getElementById("fw").value;
+let freq = document.getElementById("freq").value;
+m = new Morse(audioCtx, wpm , freq, fw);
+
 button.onclick = function () {
     if (isRunning) {
         m.stop();
@@ -269,22 +285,16 @@ button.onclick = function () {
     } else {
         
         isRunning = true;
-        let morseTxt = document.getElementById("txt").value;
-        let wpm = document.getElementById("wpm").value;
-        let fw = document.getElementById("fw").value;
-        let freq = document.getElementById("freq").value;
-        m = new Morse(audioCtx, wpm , freq, fw);
 
 
         let currentOut = '';
         const out = document.getElementById("out");
-        m.morse(morseTxt, (ev) => {
-
+        m.text = morseTxt;
+        m.displayCallback = (ev) => {
             currentOut += ev.value;
-          //  out.value = currentOut;
             out.textContent = currentOut;
             out.scrollTop = out.scrollHeight;
-            //        all.textContent = currentOut;
-        })
+        }
+        m.start();
     }
 }
