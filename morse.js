@@ -53,7 +53,6 @@ const code_map = [
 
 class Morse {
     constructor(ctx, cpm = 100, freq = 650, farnsworth = 999) {
-
         this._ctx = ctx;
         this._cpm = cpm;
         this._freq = freq;
@@ -70,8 +69,8 @@ class Morse {
 
     morse(txt, callback) {
         if (audioCtx.state !== 'running') {
-            audioCtx.resume().then(() => this._morse(txt, callback));
-        } else this._morse(txt, callback);
+            audioCtx.resume().then(() => this._morsePlay(txt, callback));
+        } else this._morsePlay(txt, callback);
     }
 
     stop() {
@@ -81,15 +80,11 @@ class Morse {
     // https://github.com/cwilso/metronome/
     // https://www.html5rocks.com/en/tutorials/audio/scheduling/
 
-    _morse(txt, callback) {
+    _morsePlay(txt, callback) {
         let conv = this._conv_to_morse(txt);
-        let seq = this._seqenceEvents(conv);
-        this._morsePlay(seq, callback);
-    }
-
-    _morsePlay(seq, callback) {
-        let start = this._ctx.currentTime;
-        let ahead = this._ditLen * 4;
+        this._seqence = this._seqenceEvents(conv);        
+        let start = this._ctx.currentTime; // start time of the current player sequence
+        let ahead = this._ditLen * 4;  // number of time we look ahead for new events to play
 
         this._runId++;
         let currRun = this._runId;
@@ -101,8 +96,8 @@ class Morse {
             let current = this._ctx.currentTime;
             let delta = current - start;
             for (;;) {          
-                if (this._currPos >= seq.length) break; // exit look if current position reach end
-                let ev = seq[this._currPos]; // pick current event
+                if (this._currPos >= this._seqence.length) break; // exit look if current position reach end
+                let ev = this._seqence[this._currPos]; // pick current event
                 if (ev.time < delta + ahead) {  // check the event is part of current lookahead
                     this._currPos++;
                     switch (ev.action) {
@@ -128,7 +123,7 @@ class Morse {
                     }
                 } else break;       
             }
-            if (seq.length > 0) setTimeout(scheduled, (ahead * 1000) / 3);
+            if (this._seqence.length > 0) setTimeout(scheduled, (ahead * 1000) / 3);
         }
         scheduled();
     }
