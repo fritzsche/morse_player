@@ -127,28 +127,35 @@ class Morse {
         let seq = [];
         let current = 0;
 
+        let currDits = 0;
+        let currSpaceDits = 0;
+
         conv.forEach(letter => {
             switch (letter.pattern) {
                 case ' ':
-                    seq.push({ time: current, action: 'DISPLAY', value: ' ' });
+                    seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: ' ' });
                     current += this._spaceDitLen * 7;
+                    currSpaceDits += 7;
 
                     break;
                 case '*':
                     current += this._spaceDitLen * 3;
+                    currSpaceDits += 3;
                     break;
                 default:
                     let word = letter.pattern.split("").join("*");
-                    seq.push({ time: current, action: 'DISPLAY', value: letter.text });
+                    seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: letter.text });
                     [...word].forEach(tone => {
+                        currDits++;
                         switch (tone) {
                             case '.':
-                                seq.push({ time: current, action: 'PLAY', tone: '.' });
-                                current += this._ditLen;
+                                seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'PLAY', tone: '.' });
+                                current += this._ditLen;                                
                                 break;
                             case '-':
-                                seq.push({ time: current, action: 'PLAY', tone: '_' });
+                                seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'PLAY', tone: '_' });
                                 current += this._ditLen * 3;
+                                currDits+=2;
                             case '*':
                                 current += this._ditLen;
                                 break;
