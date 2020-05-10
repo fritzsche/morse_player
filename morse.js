@@ -52,37 +52,32 @@ const code_map = [
 
 
 class Morse {
-    constructor(ctx, cpm = 100, freq = 650, farnsworth = 999) {
-        this._ctx = ctx;
-        this._cpm = cpm;
+    constructor(ctx, wpm = 20, freq = 650, farnsworth = 999) {
+        this._ctx = ctx;  // web audio context
+        this._wpm = Number(wpm);
         this._freq = freq;
-        this._farnsworth = farnsworth < cpm ? farnsworth : cpm;
-        this._ditLen = this._ditLength(cpm);
-
+        this._farnsworth = Number(farnsworth);
+        if ( this._farnsworth > this._wpm )  this._farnsworth = this._wpm;
+        this._ditLen = this._ditLength(wpm * 5);
         this._runId = 0;
-
-        this._spaceDitLen = this._ditLength(this._farnsworth);
+        this._spaceDitLen = this._ditLength(this._farnsworth * 5);
         this._ditBuffer = this._createBuffer(this._ditLen);
         this._dahBuffer = this._createBuffer(this._ditLen * 3);
-
     }
 
     morse(txt, callback) {
+        let conv = this._conv_to_morse(txt);
+        this._seqence = this._seqenceEvents(conv);         
         if (audioCtx.state !== 'running') {
-            audioCtx.resume().then(() => this._morsePlay(txt, callback));
-        } else this._morsePlay(txt, callback);
+            audioCtx.resume().then(() => this._morsePlay(callback));
+        } else this._morsePlay(callback);
     }
-
     stop() {
         this._runId++;
     }
-
     // https://github.com/cwilso/metronome/
     // https://www.html5rocks.com/en/tutorials/audio/scheduling/
-
-    _morsePlay(txt, callback) {
-        let conv = this._conv_to_morse(txt);
-        this._seqence = this._seqenceEvents(conv);        
+    _morsePlay(callback) {      
         let start = this._ctx.currentTime; // start time of the current player sequence
         let ahead = this._ditLen * 4;  // number of time we look ahead for new events to play
 
@@ -271,7 +266,7 @@ button.onclick = function () {
         let wpm = document.getElementById("wpm").value;
         let fw = document.getElementById("fw").value;
         let freq = document.getElementById("freq").value;
-        m = new Morse(audioCtx, wpm * 5, freq, fw * 5);
+        m = new Morse(audioCtx, wpm , freq, fw);
 
 
         let currentOut = '';
