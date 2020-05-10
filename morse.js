@@ -76,7 +76,7 @@ class Morse {
 
         if (this._state !== 'INITIAL') {
             this._seqence = this._seqenceEvents(this._conv_to_morse(this._text));
-            this.startTime = this._ctx.currentTime - this._seqence[this._currPos].time;
+            this._startTime = this._ctx.currentTime - this._seqence[this._currPos].time;
         }
     }
 
@@ -154,6 +154,7 @@ class Morse {
             for (; ;) {
                 if (this._currPos >= this._seqence.length) {
                     this._state = 'ENDED';
+                    this._currPos = 0;
                     break; // exit look if current position reach end
                 }
                 let ev = this._seqence[this._currPos]; // pick current event
@@ -182,7 +183,7 @@ class Morse {
                     }
                 } else break;
             }
-            if (this._seqence.length > 0) setTimeout(scheduled, (ahead * 1000) / 3);
+            if (this._state === 'STARTED') setTimeout(scheduled, (ahead * 1000) / 3);
         }
         scheduled();
     }
