@@ -71,9 +71,11 @@ class Morse {
     }
 
     set wpm(w) {
-        if (this._wpm === w) return;
-        this._wpm = Number(wpm);
-
+        if (this._wpm === Number(w)) return;
+        this._wpm = Number(w);
+        this._ditLen = this._ditLength(this._wpm * 5);
+        if (this._farnsworth > this._wpm) this._farnsworth = this._wpm;
+        this._spaceDitLen = this._ditLength(this._farnsworth * 5);        
         if (this._state !== 'INITIAL') {
             this._seqence = this._seqenceEvents(this._conv_to_morse(this._text));
             this._startTime = this._ctx.currentTime - this._seqence[this._currPos].time;
