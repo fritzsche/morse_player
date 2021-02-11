@@ -46,6 +46,7 @@ const code_map = [
     [/\?/, '..--..'],
     [/'/, '.----.'],
     [/\//, '-..-.'],
+    [/\./, '-.-.'],    
     [/\s+/, ' '],  // whitespace is trimmed to single char
     [/./, '']  // ignore all unknown char
 ];
