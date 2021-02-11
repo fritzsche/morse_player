@@ -84,7 +84,7 @@
   }
   
 #out {
-  width:100%; 
+  width:95%; 
   height: 3em;
   font-size: 20pt;
   word-wrap: break-word;
@@ -92,6 +92,7 @@
   padding: 10px;
   background-color: rgb(46, 46, 46);
   color: white;
+  margin: auto;
 /*  white-space: pre;*/
 }
 

@@ -1,8 +1,7 @@
-
 const code_map = [
-    [/<ka>/, '-.-.-'],  // Message begins / Start of work 
+    [/<ka>/, '-.-.-'], // Message begins / Start of work 
     [/<sk>/, '...-.-'], //  End of contact / End of work
-    [/<ar>/, '.-.-.'],  // End of transmission / End of message
+    [/<ar>/, '.-.-.'], // End of transmission / End of message
     [/<kn>/, '-.--.'], // Go ahead, specific named station.
     [/=/, '-...-'],
     [/a/, '.-'],
@@ -52,8 +51,8 @@ const code_map = [
     [/ü/, '..--'],
     [/ß/, '...--..'],
     [/\!/, '-.-.--'],
-    [/\s+/, ' '],  // whitespace is trimmed to single char
-    [/./, '']  // ignore all unknown char
+    [/\s+/, ' '], // whitespace is trimmed to single char
+    [/./, ''] // ignore all unknown char
 ];
 
 
@@ -61,7 +60,7 @@ class Morse {
     constructor(ctx, wpm = 20, freq = 650, farnsworth = 999) {
 
 
-        this._ctx = ctx;  // web audio context
+        this._ctx = ctx; // web audio context
         this._runId = 0;
         this._currPos = 0;
         this._state = 'INITIAL';
@@ -81,7 +80,7 @@ class Morse {
         this._wpm = Number(w);
         this._ditLen = this._ditLength(this._wpm * 5);
         if (this._farnsworth > this._wpm) this._farnsworth = this._wpm;
-        this._spaceDitLen = this._ditLength(this._farnsworth * 5);        
+        this._spaceDitLen = this._ditLength(this._farnsworth * 5);
         if (this._state !== 'INITIAL') {
             this._seqence = this._seqenceEvents(this._conv_to_morse(this._text));
             this._startTime = this._ctx.currentTime - this._seqence[this._currPos].time;
@@ -140,7 +139,8 @@ class Morse {
     // https://www.html5rocks.com/en/tutorials/audio/scheduling/
     _morsePlay() {
         switch (this._state) {
-            case 'INITIAL': this._startTime = this._ctx.currentTime;
+            case 'INITIAL':
+                this._startTime = this._ctx.currentTime;
                 break;
             case 'STOPPED':
                 this._startTime = this._ctx.currentTime - this._seqence[this._currPos].time;
@@ -152,21 +152,21 @@ class Morse {
         }
         this._state = 'STARTED';
         // start time of the current player sequence
-        let ahead = this._ditLen * 4;  // number of time we look ahead for new events to play
+        let ahead = this._ditLen * 4; // number of time we look ahead for new events to play
         this._runId++;
         let currRun = this._runId;
         let scheduled = () => {
             if (currRun !== this._runId) return;
             let current = this._ctx.currentTime;
             let delta = current - this._startTime;
-            for (; ;) {
+            for (;;) {
                 if (this._currPos >= this._seqence.length) {
                     this._state = 'ENDED';
                     this._currPos = 0;
                     break; // exit look if current position reach end
                 }
                 let ev = this._seqence[this._currPos]; // pick current event
-                if (ev.time < delta + ahead) {  // check the event is part of current lookahead
+                if (ev.time < delta + ahead) { // check the event is part of current lookahead
                     this._currPos++;
                     switch (ev.action) {
                         case 'PLAY': {
@@ -207,10 +207,17 @@ class Morse {
             switch (letter.pattern) {
                 case ' ':
                     currText += ' ';
-//                    seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: ' ', text: currText });
+                    //                    seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: ' ', text: currText });
                     current += this._spaceDitLen * 7;
                     currSpaceDits += 7;
-                    seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: ' ', text: currText });                    
+                    seq.push({
+                        time: current,
+                        dits: currDits,
+                        spaces: currSpaceDits,
+                        action: 'DISPLAY',
+                        value: ' ',
+                        text: currText
+                    });
                     break;
                 case '*':
                     current += this._spaceDitLen * 3;
@@ -219,16 +226,28 @@ class Morse {
                 default:
                     let word = letter.pattern.split("").join("*");
                     currText += letter.text;
-//                    seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: letter.text, text: currText });
+                    //                    seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: letter.text, text: currText });
                     [...word].forEach(tone => {
                         currDits++;
                         switch (tone) {
                             case '.':
-                                seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'PLAY', tone: '.' });
+                                seq.push({
+                                    time: current,
+                                    dits: currDits,
+                                    spaces: currSpaceDits,
+                                    action: 'PLAY',
+                                    tone: '.'
+                                });
                                 current += this._ditLen;
                                 break;
                             case '-':
-                                seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'PLAY', tone: '_' });
+                                seq.push({
+                                    time: current,
+                                    dits: currDits,
+                                    spaces: currSpaceDits,
+                                    action: 'PLAY',
+                                    tone: '_'
+                                });
                                 current += this._ditLen * 3;
                                 currDits += 2;
                             case '*':
@@ -238,7 +257,14 @@ class Morse {
                                 debugger;
                         }
                     });
-                    seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: letter.text, text: currText });                    
+                    seq.push({
+                        time: current,
+                        dits: currDits,
+                        spaces: currSpaceDits,
+                        action: 'DISPLAY',
+                        value: letter.text,
+                        text: currText
+                    });
                     break;
             }
         });
@@ -276,7 +302,7 @@ class Morse {
         let offset = 0;
         let last_is_char = false;
         var result = [];
-        for (; ;) {
+        for (;;) {
             let length = 0;
             let pattern = "";
             for (let i = 0; i < code_map.length; i++) {
@@ -290,12 +316,20 @@ class Morse {
             }
             if (pattern != '') {
                 if (pattern == ' ') {
-                    result.push({ pattern: pattern })
+                    result.push({
+                        pattern: pattern
+                    })
                     last_is_char = false;
-                }
-                else {
-                    if (last_is_char) result.push({ pattern: '*' });
-                    result.push({ pattern: pattern, offset: offset, length: length, text: low_str.substr(offset, length) });
+                } else {
+                    if (last_is_char) result.push({
+                        pattern: '*'
+                    });
+                    result.push({
+                        pattern: pattern,
+                        offset: offset,
+                        length: length,
+                        text: low_str.substr(offset, length)
+                    });
                     last_is_char = true;
                 }
             }
@@ -321,7 +355,7 @@ class Morse {
         return cpmDitSpeed / cpm;
     }
 }
-let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let audioCtx = new(window.AudioContext || window.webkitAudioContext)();
 
 /*
 let start = Date.now();
@@ -335,23 +369,7 @@ audioCtx.resume().then(() => {
 */
 
 
-/*
 
-let randChar = (s) => {
-  return s.charAt( Math.floor(Math.random() * s.length  ) )
-}
-
-let r = "";
-for(let i = 0;i<2000;) {
-  r += randChar("KMURESNAPTL")
-  i++
-  if (i % 5 == 0) r += ' '
-  if (i % 50 == 0) r += '\n'
-  
-}
-console.log(r.toLowerCase() )
-
-*/
 
 
 
@@ -366,11 +384,13 @@ m.displayCallback = (ev) => {
     out.textContent = ev.text;
     out.scrollTop = out.scrollHeight;
 }
-const button = document.querySelector('button');
+const button = document.getElementById("morse");
 
 button.onclick = function () {
     switch (m.state) {
-        case 'STARTED': m.stop(); break;
+        case 'STARTED':
+            m.stop();
+            break;
         default:
             let freq = document.getElementById("freq").value;
             let morseTxt = document.getElementById("txt").value;
@@ -384,5 +404,28 @@ button.onclick = function () {
             m.farnsworth = fw;
             m.start();
             break;
+    }
+}
+
+
+
+const generate = document.getElementById("generate");
+generate.onclick = function () {
+    let random = document.getElementById("random").value
+    random.replace(/\s/g, "")
+    if (random.length > 0) {
+        let randChar = (s) => {
+            return s.charAt(Math.floor(Math.random() * s.length))
+        }
+
+        let r = "";
+        for (let i = 0; i < 2000;) {
+            r += randChar(random)
+            i++
+            if (i % 5 == 0) r += ' '
+            if (i % 50 == 0) r += '\n'
+
+        }
+        document.getElementById("txt").value = r.toLowerCase()
     }
 }
