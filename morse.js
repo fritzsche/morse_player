@@ -207,9 +207,10 @@ class Morse {
             switch (letter.pattern) {
                 case ' ':
                     currText += ' ';
-                    seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: ' ', text: currText });
+//                    seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: ' ', text: currText });
                     current += this._spaceDitLen * 7;
                     currSpaceDits += 7;
+                    seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: ' ', text: currText });                    
                     break;
                 case '*':
                     current += this._spaceDitLen * 3;
@@ -218,7 +219,7 @@ class Morse {
                 default:
                     let word = letter.pattern.split("").join("*");
                     currText += letter.text;
-                    seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: letter.text, text: currText });
+//                    seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: letter.text, text: currText });
                     [...word].forEach(tone => {
                         currDits++;
                         switch (tone) {
@@ -237,6 +238,7 @@ class Morse {
                                 debugger;
                         }
                     });
+                    seq.push({ time: current, dits: currDits, spaces: currSpaceDits, action: 'DISPLAY', value: letter.text, text: currText });                    
                     break;
             }
         });
@@ -333,6 +335,25 @@ audioCtx.resume().then(() => {
 */
 
 
+/*
+
+let randChar = (s) => {
+  return s.charAt( Math.floor(Math.random() * s.length  ) )
+}
+
+let r = "";
+for(let i = 0;i<2000;) {
+  r += randChar("KMURESNAPTL")
+  i++
+  if (i % 5 == 0) r += ' '
+  if (i % 50 == 0) r += '\n'
+  
+}
+console.log(r.toLowerCase() )
+
+*/
+
+
 
 let wpm = document.getElementById("wpm").value;
 let fw = document.getElementById("fw").value;
@@ -355,6 +376,8 @@ button.onclick = function () {
             let morseTxt = document.getElementById("txt").value;
             let wpm = document.getElementById("wpm").value;
             let fw = document.getElementById("fw").value;
+            out.textContent = '';
+            out.scrollTop = out.scrollHeight;
             m.text = morseTxt;
             m.frequency = freq;
             m.wpm = wpm;
