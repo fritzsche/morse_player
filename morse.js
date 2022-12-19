@@ -152,7 +152,7 @@ class Morse {
         }
         this._state = 'STARTED';
         // start time of the current player sequence
-        let ahead = this._ditLen * 4; // number of time we look ahead for new events to play
+        let ahead = this._ditLen * 10; // number of time we look ahead for new events to play
         this._runId++;
         let currRun = this._runId;
         let scheduled = () => {
@@ -272,8 +272,8 @@ class Morse {
     }
 
     _createBuffer(len) {
-        let rt = 50;
-        let ft = 50;
+        let rt = 200;
+        let ft = 200;
         let myArrayBuffer = this._ctx.createBuffer(2, this._ctx.sampleRate * len, this._ctx.sampleRate);
 
         for (let channel = 0; channel < myArrayBuffer.numberOfChannels; channel++) {
@@ -282,10 +282,10 @@ class Morse {
             for (let i = 0; i < myArrayBuffer.length; i++) {
                 nowBuffering[i] = Math.sin(2 * Math.PI * this._freq * i / this._ctx.sampleRate);
                 if (i < rt) {
-                    nowBuffering[i] *= Math.pow(Math.sin(Math.PI * i / (2 * rt)), 2);
+                    nowBuffering[i] *= Math.pow(Math.sin( ( Math.PI / 2 )  * ( i / rt)), 2);
                 }
                 if (i > myArrayBuffer.length - ft) {
-                    nowBuffering[i] *= Math.pow((Math.sin(2 * Math.PI * (i - (myArrayBuffer.length - ft) + ft) / (4 * ft))), 2);
+                    nowBuffering[i] *= Math.pow((Math.sin( ( Math.PI / 2 ) * (i - myArrayBuffer.length + 2 * ft) / ft)), 2);
                 }
             }
         }
