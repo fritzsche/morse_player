@@ -250,6 +250,7 @@ class Morse {
                                 });
                                 current += this._ditLen * 3;
                                 currDits += 2;
+                                break;
                             case '*':
                                 current += this._ditLen;
                                 break;
