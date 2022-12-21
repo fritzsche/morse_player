@@ -249,7 +249,7 @@ class Morse {
                                     tone: '.'
                                 });
                                 current += this._ditLen;
-                                break;
+                                break
                             case '-':
                                 seq.push({
                                     time: current,
@@ -265,7 +265,7 @@ class Morse {
                                 current += this._ditLen;
                                 break
                             default:
-                                debugger;
+                                debugger
                         }
                     });
                     seq.push({
