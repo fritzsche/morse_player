@@ -61,26 +61,38 @@ class Morse {
 
 
         this._ctx = ctx; // web audio context
+
+        this._gain = this._ctx.createGain()
+        this._gain.connect(this._ctx.destination)
+//        const clip_vol = 1.8 * Math.exp(-0.115 * 12 )
+        this._gain.gain.value = 0.5 * 0.5 * 0.6
+
+        this._lpf = this._ctx.createBiquadFilter()
+        this._lpf.type = "lowpass"
+        this._lpf.frequency.setValueAtTime(freq, this._ctx.currentTime)
+        this._lpf.Q.setValueAtTime(12, this._ctx.currentTime)
+        this._lpf.connect(this._gain)
+
         this._runId = 0;
         this._currPos = 0;
-        this._state = 'INITIAL';
+        this._state = 'INITIAL'
 
         this._wpm = Number(wpm);
-        this._ditLen = this._ditLength(wpm * 5);
-        this._farnsworth = Number(farnsworth);
-        if (this._farnsworth > this._wpm) this._farnsworth = this._wpm;
-        this._spaceDitLen = this._ditLength(this._farnsworth * 5);
+        this._ditLen = this._ditLength(wpm * 5)
+        this._farnsworth = Number(farnsworth)
+        if (this._farnsworth > this._wpm) this._farnsworth = this._wpm
+        this._spaceDitLen = this._ditLength(this._farnsworth * 5)
 
-        this.frequency = freq;
+        this.frequency = freq
 
     }
 
     set wpm(w) {
-        if (this._wpm === Number(w)) return;
-        this._wpm = Number(w);
-        this._ditLen = this._ditLength(this._wpm * 5);
-        if (this._farnsworth > this._wpm) this._farnsworth = this._wpm;
-        this._spaceDitLen = this._ditLength(this._farnsworth * 5);
+        if (this._wpm === Number(w)) return
+        this._wpm = Number(w)
+        this._ditLen = this._ditLength(this._wpm * 5)
+        if (this._farnsworth > this._wpm) this._farnsworth = this._wpm
+        this._spaceDitLen = this._ditLength(this._farnsworth * 5)
         if (this._state !== 'INITIAL') {
             this._seqence = this._seqenceEvents(this._conv_to_morse(this._text));
             this._startTime = this._ctx.currentTime - this._seqence[this._currPos].time;
@@ -100,9 +112,6 @@ class Morse {
     }
 
 
-    /**
-     * @param {string} txt
-     */
     set text(txt) {
         if (this._text === txt) return;
         this._text = txt;
@@ -119,6 +128,7 @@ class Morse {
         this._freq = freq;
         this._ditBuffer = this._createBuffer(this._ditLen);
         this._dahBuffer = this._createBuffer(this._ditLen * 3);
+        this._lpf.frequency.setValueAtTime(freq, this._ctx.currentTime)        
     }
 
 
@@ -218,11 +228,11 @@ class Morse {
                         value: ' ',
                         text: currText
                     });
-                    break;
+                    break
                 case '*':
-                    current += this._spaceDitLen * 3;
-                    currSpaceDits += 3;
-                    break;
+                    current += this._spaceDitLen * 3
+                    currSpaceDits += 3
+                    break
                 default:
                     let word = letter.pattern.split("").join("*");
                     currText += letter.text;
@@ -248,11 +258,12 @@ class Morse {
                                     action: 'PLAY',
                                     tone: '_'
                                 });
-                                current += this._ditLen * 3;
-                                currDits += 2;
+                                current += this._ditLen * 3
+                                currDits += 2
+                                break
                             case '*':
                                 current += this._ditLen;
-                                break;
+                                break
                             default:
                                 debugger;
                         }
@@ -267,7 +278,7 @@ class Morse {
                     });
                     break;
             }
-        });
+        })
         return seq;
     }
 
@@ -281,12 +292,6 @@ class Morse {
             let nowBuffering = myArrayBuffer.getChannelData(channel);
             for (let i = 0; i < myArrayBuffer.length; i++) {
                 nowBuffering[i] = Math.sin(2 * Math.PI * this._freq * i / this._ctx.sampleRate);
-                if (i < rt) {
-                    nowBuffering[i] *= Math.pow(Math.sin( ( Math.PI / 2 )  * ( i / rt)), 2);
-                }
-                if (i > myArrayBuffer.length - ft) {
-                    nowBuffering[i] *= Math.pow((Math.sin( ( Math.PI / 2 ) * (i - myArrayBuffer.length + 2 * ft) / ft)), 2);
-                }
             }
         }
         return myArrayBuffer;
@@ -294,7 +299,7 @@ class Morse {
     _playBuffer(buf, start = 0) {
         let source = this._ctx.createBufferSource();
         source.buffer = buf;
-        source.connect(this._ctx.destination);
+        source.connect(this._lpf);
         source.start(start);
     }
     _conv_to_morse(str) {
@@ -357,24 +362,10 @@ class Morse {
 }
 let audioCtx = new(window.AudioContext || window.webkitAudioContext)();
 
-/*
-let start = Date.now();
-audioCtx.resume().then(() => {
-    const millis = Date.now() - start;
-    if (millis < 200) {
-        let m = new Morse(audioCtx, 100, 650, 60);
-        m.morse("vvv<ka>");
-    }
-});
-*/
-
-
-
-
-
 
 let wpm = document.getElementById("wpm").value;
 let fw = document.getElementById("fw").value;
+let freq = parseInt( document.getElementById("freq").value );
 
 let m = new Morse(audioCtx, wpm, freq, fw);
 
