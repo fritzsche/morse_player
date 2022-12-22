@@ -64,7 +64,7 @@ class Morse {
 
         this._gain = this._ctx.createGain()
         this._gain.connect(this._ctx.destination)
-//        const clip_vol = 1.8 * Math.exp(-0.115 * 12 )
+        //        const clip_vol = 1.8 * Math.exp(-0.115 * 12 )
         this._gain.gain.value = 0.5 * 0.5 * 0.6
 
         this._lpf = this._ctx.createBiquadFilter()
@@ -72,6 +72,16 @@ class Morse {
         this._lpf.frequency.setValueAtTime(freq, this._ctx.currentTime)
         this._lpf.Q.setValueAtTime(12, this._ctx.currentTime)
         this._lpf.connect(this._gain)
+
+        this._cwGain = this._ctx.createGain()
+        this._cwGain.gain.value = 0
+        this._cwGain.connect(this._lpf)
+
+        this._oscillator = this._ctx.createOscillator()
+        this._oscillator.type = 'sine'
+        this._oscillator.frequency.setValueAtTime(freq, this._ctx.currentTime)
+        this._oscillator.connect(this._cwGain)
+        this._oscillator.start()
 
         this._runId = 0;
         this._currPos = 0;
@@ -126,9 +136,9 @@ class Morse {
 
     set frequency(freq = 650) {
         this._freq = freq;
-        this._ditBuffer = this._createBuffer(this._ditLen);
-        this._dahBuffer = this._createBuffer(this._ditLen * 3);
-        this._lpf.frequency.setValueAtTime(freq, this._ctx.currentTime)        
+
+        this._lpf.frequency.setValueAtTime(freq, this._ctx.currentTime)
+        this._oscillator.frequency.setValueAtTime(freq, this._ctx.currentTime)
     }
 
 
@@ -142,22 +152,24 @@ class Morse {
         } else this._morsePlay();
     }
     stop() {
-        this._runId++;
-        this._state = 'STOPPED';
+        this._runId++
+        this._state = 'STOPPED'
+        this._cwGain.gain.cancelScheduledValues(this._ctx.currentTime)
+        this._cwGain.gain.value = 0
     }
     // https://github.com/cwilso/metronome/
     // https://www.html5rocks.com/en/tutorials/audio/scheduling/
     _morsePlay() {
         switch (this._state) {
             case 'INITIAL':
-                this._startTime = this._ctx.currentTime;
+                this._startTime = this._ctx.currentTime + 0.01
                 break;
             case 'STOPPED':
                 this._startTime = this._ctx.currentTime - this._seqence[this._currPos].time;
                 break;
             case 'ENDED':
                 this._currPos = 0;
-                this._startTime = this._ctx.currentTime;
+                this._startTime = this._ctx.currentTime + 0.01
                 break;
         }
         this._state = 'STARTED';
@@ -169,10 +181,11 @@ class Morse {
             if (currRun !== this._runId) return;
             let current = this._ctx.currentTime;
             let delta = current - this._startTime;
-            for (;;) {
+            for (; ;) {
                 if (this._currPos >= this._seqence.length) {
                     this._state = 'ENDED';
                     this._currPos = 0;
+                    // this._gain.gain.exponentialRampToValueAtTime(0, this._ctx.currentTime + 1.00)
                     break; // exit look if current position reach end
                 }
                 let ev = this._seqence[this._currPos]; // pick current event
@@ -182,11 +195,13 @@ class Morse {
                         case 'PLAY': {
                             switch (ev.tone) {
                                 case '.': {
-                                    this._playBuffer(this._ditBuffer, this._startTime + ev.time);
+                                    this._cwGain.gain.setValueAtTime(1, this._startTime + ev.time)
+                                    this._cwGain.gain.setValueAtTime(0, this._startTime + ev.time + this._ditLen )
                                     break;
                                 }
-                                case '_': {
-                                    this._playBuffer(this._dahBuffer, this._startTime + ev.time);
+                                case '_': {                                
+                                    this._cwGain.gain.setValueAtTime(1, this._startTime + ev.time)
+                                    this._cwGain.gain.setValueAtTime(0, this._startTime + ev.time + (this._ditLen * 3))
                                     break;
                                 }
                             }
@@ -197,6 +212,7 @@ class Morse {
                             setTimeout(() => {
                                 if (this._displayCallback) this._displayCallback(ev);
                             }, milis);
+                            break;
                         }
                     }
                 } else break;
@@ -282,32 +298,12 @@ class Morse {
         return seq;
     }
 
-    _createBuffer(len) {
-        let rt = 200;
-        let ft = 200;
-        let myArrayBuffer = this._ctx.createBuffer(2, this._ctx.sampleRate * len, this._ctx.sampleRate);
-
-        for (let channel = 0; channel < myArrayBuffer.numberOfChannels; channel++) {
-            // This gives us the actual ArrayBuffer that contains the data
-            let nowBuffering = myArrayBuffer.getChannelData(channel);
-            for (let i = 0; i < myArrayBuffer.length; i++) {
-                nowBuffering[i] = Math.sin(2 * Math.PI * this._freq * i / this._ctx.sampleRate);
-            }
-        }
-        return myArrayBuffer;
-    }
-    _playBuffer(buf, start = 0) {
-        let source = this._ctx.createBufferSource();
-        source.buffer = buf;
-        source.connect(this._lpf);
-        source.start(start);
-    }
     _conv_to_morse(str) {
         let low_str = str.toLowerCase();
         let offset = 0;
         let last_is_char = false;
         var result = [];
-        for (;;) {
+        for (; ;) {
             let length = 0;
             let pattern = "";
             for (let i = 0; i < code_map.length; i++) {
@@ -360,12 +356,11 @@ class Morse {
         return cpmDitSpeed / cpm;
     }
 }
-let audioCtx = new(window.AudioContext || window.webkitAudioContext)();
-
+let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
 let wpm = document.getElementById("wpm").value;
 let fw = document.getElementById("fw").value;
-let freq = parseInt( document.getElementById("freq").value );
+let freq = parseInt(document.getElementById("freq").value);
 
 let m = new Morse(audioCtx, wpm, freq, fw);
 
@@ -383,7 +378,7 @@ button.onclick = function () {
             m.stop();
             break;
         default:
-            let freq = document.getElementById("freq").value;
+            let freq = parseInt(document.getElementById("freq").value);
             let morseTxt = document.getElementById("txt").value;
             let wpm = document.getElementById("wpm").value;
             let fw = document.getElementById("fw").value;
